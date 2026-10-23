@@ -55,17 +55,17 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew
-          ./gradlew :FarsiFlixModularProvider:make makePluginsJson
+          ./gradlew :FarsiFlixHDProvider:make makePluginsJson
           cp FarsiFlixModularProvider/build/*.cs3 "$GITHUB_WORKSPACE/builds/"
           python3 - <<'PY'
           import json
           from pathlib import Path
           plugins = json.loads(Path("build/plugins.json").read_text())
-          chosen = [p for p in plugins if p.get("internalName") == "FarsiFlixModularProvider"]
+          chosen = [p for p in plugins if p.get("internalName") == "FarsiFlixHDProvider"]
           if len(chosen) != 1:
               raise RuntimeError(f"Expected one modular plugin, got {len(chosen)}")
           chosen[0]["repositoryUrl"] = "https://github.com/It5Daniel/per3"
-          chosen[0]["url"] = "https://raw.githubusercontent.com/It5Daniel/per3/builds/FarsiFlixModularProvider.cs3"
+          chosen[0]["url"] = "https://raw.githubusercontent.com/It5Daniel/per3/builds/FarsiFlixHDProvider.cs3"
           Path("../builds/plugins.json").write_text(json.dumps(chosen, indent=2))
           PY
 
