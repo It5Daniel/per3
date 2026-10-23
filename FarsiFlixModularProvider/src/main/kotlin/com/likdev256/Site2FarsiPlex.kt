@@ -138,9 +138,10 @@ class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
             
             if (postId.isNotEmpty()) {
                 // Try dooplayer API to get embed URLs for each quality
-                for (nume in 1..3) {
+                for (nume in 1..8) {
                     try {
-                        val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$postId/tv/$nume"
+                        val playerType = if (data.contains("/movie/")) "movie" else "tv"
+                        val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$postId/$playerType/$nume"
                         val apiResponse = app.get(apiUrl).text
                         
                         val embedUrlRegex = Regex(""""embed_url"\s*:\s*"([^"]+)"""")
@@ -199,7 +200,7 @@ class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
             }
             
             // Fallback: try player options from page
-            if (foundLinks == 0) {
+            if (true) { // Always check player options, even when an earlier source was found.
                 val playerDocument = if (watchForm != null) {
                     val formAction = watchForm.attr("action")
                     val formId = watchForm.selectFirst("input[name=id]")?.attr("value") ?: ""
@@ -235,7 +236,7 @@ class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
                                     if (jwFileMatch != null) {
                                         val realVideoUrl = jwFileMatch.groupValues[1].replace("\\/", "/")
                                         
-                                        if (realVideoUrl.isNotBlank() && realVideoUrl.contains(".mp4")) {
+                                        if (realVideoUrl.isNotBlank() && (realVideoUrl.contains(".mp4") || realVideoUrl.contains(".m3u8"))) {
                                             val quality = when {
                                                 realVideoUrl.contains("1080") -> Qualities.P1080.value
                                                 realVideoUrl.contains("720") -> Qualities.P720.value
