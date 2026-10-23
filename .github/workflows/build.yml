@@ -6,6 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  workflow_dispatch:
   push:
     branches:
       # choose your default branch
@@ -14,7 +15,8 @@ on:
     paths-ignore:
       - '*.md'
 
-permissions: write-all
+permissions:
+  contents: write
 
 jobs:
   build:
