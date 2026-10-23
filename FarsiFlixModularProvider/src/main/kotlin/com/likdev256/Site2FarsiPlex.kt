@@ -6,8 +6,8 @@ import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import android.util.Log
 
 /**
  * Site 2: FarsiPlex (farsiplex.com)
@@ -184,24 +184,40 @@ class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
             val type = element.attr("data-type").ifBlank { preferredType }
             if (index != null && index in 1..20) options.add(type to index)
         }
-        for (index in 1..8) options.add(preferredType to index)
+        for (index in listOf(3, 2, 1, 4, 5, 6)) options.add(preferredType to index)
 
-        val videos = coroutineScope {
-            options.map { (type, index) ->
-                async {
-                    try {
-                        val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$postId/$type/$index"
-                        val json = app.get(apiUrl, referer = data).text
-                        val embedUrl = org.json.JSONObject(json).optString("embed_url").trim()
-                        if (!embedUrl.startsWith("https://") && !embedUrl.startsWith("http://")) {
-                            null
-                        } else {
-                            val playerHtml = app.get(embedUrl, referer = data).text
-                            extractSignedVideo(playerHtml, embedUrl)
-                        }
-                    } catch (_: Exception) { null }
+        // Sequential requests: avoid throttling and expose every failure.
+        val videos = mutableListOf<FarsiPlexVideo>()
+        var apiResponses = 0
+        var embedResponses = 0
+        for ((type, index) in options) {
+            val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$postId/$type/$index"
+            try {
+                val response = app.get(apiUrl, referer = data).text
+                val embedUrl = org.json.JSONObject(response).optString("embed_url").trim()
+                if (!embedUrl.startsWith("https://") && !embedUrl.startsWith("http://")) {
+                    Log.d("FarsiPlexHD", "player " + type + "/" + index + " has no embed_url")
+                    continue
                 }
-            }.mapNotNull { it.await() }
+                apiResponses++
+                val playerHtml = try {
+                    app.get(embedUrl, referer = data).text
+                } catch (first: Exception) {
+                    Log.w("FarsiPlexHD", "player " + type + "/" + index + " first fetch failed: " + first.message)
+                    app.get(embedUrl, referer = "$siteUrl/").text
+                }
+                val signed = extractSignedVideo(playerHtml, embedUrl)
+                if (signed != null) {
+                    embedResponses++
+                    videos.add(signed)
+                    Log.i("FarsiPlexHD", "player " + type + "/" + index + " resolved quality " + signed.resolution)
+                } else {
+                    Log.w("FarsiPlexHD", "player " + type + "/" + index + " returned no signed video")
+                }
+            } catch (e: Exception) {
+                Log.e("FarsiPlexHD", "player " + type + "/" + index + " failed", e)
+            }
+            delay(120L)
         }
 
         // Deduplicate links, favour 1080p. The player can display every found quality.
@@ -214,7 +230,7 @@ class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
             callback.invoke(
                 newExtractorLink(
                     source = siteName,
-                    name = siteName + " " + label,
+                    name = "FP-HD-v5 " + label + " [API:" + apiResponses + ",links:" + embedResponses + "]",
                     url = video.url
                 ).apply {
                     quality = if (video.resolution > 0) video.resolution else Qualities.Unknown.value
