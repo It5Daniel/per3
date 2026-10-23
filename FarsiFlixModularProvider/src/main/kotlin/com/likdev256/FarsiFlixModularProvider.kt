@@ -16,7 +16,7 @@ import kotlinx.coroutines.coroutineScope
  */
 class FarsiFlixModularProvider : MainAPI() {
     override var mainUrl = "https://farsiplex.com"
-    override var name = "FarsiFlix Modular"
+    override var name = "FarsiFlix HD Daniel"
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
