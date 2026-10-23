@@ -1,11 +1,11 @@
-version = 1
+version = 2
 
 
 cloudstream {
     language = "fa"
     // All of these properties are optional, you can safely remove them
 
-    description = "FarsiFlix Modular - All Persian Sources (Modular Architecture)"
+    description = "FarsiFlix Modular - extended FarsiPlex player and quality discovery"
     authors = listOf("NoMeatNo")
 
     /**
