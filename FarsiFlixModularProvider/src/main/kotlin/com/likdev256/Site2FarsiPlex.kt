@@ -6,6 +6,8 @@ import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 /**
  * Site 2: FarsiPlex (farsiplex.com)
@@ -184,9 +186,9 @@ class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
         }
         for (index in 1..8) options.add(preferredType to index)
 
-        val videos = kotlinx.coroutines.coroutineScope {
+        val videos = coroutineScope {
             options.map { (type, index) ->
-                kotlinx.coroutines.async {
+                async {
                     try {
                         val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$postId/$type/$index"
                         val json = app.get(apiUrl, referer = data).text
