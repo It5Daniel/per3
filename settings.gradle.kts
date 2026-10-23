@@ -3,7 +3,8 @@ rootProject.name = "CloudstreamPlugins"
 // This file sets what projects are included. All new projects should get automatically included unless specified in "disabled" variable.
 
 // Only build the active providers
-include("FarsiFlixModularProvider")
+include("FarsiFlixHDProvider")
+project(":FarsiFlixHDProvider").projectDir = file("FarsiFlixModularProvider")
 include("FarsiFlixSuperProvider")
 include("NostalgicModularProvider")
 include("IranWizProvider")
