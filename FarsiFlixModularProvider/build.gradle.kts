@@ -1,11 +1,11 @@
-version = 4
+version = 5
 
 
 cloudstream {
     language = "fa"
     // All of these properties are optional, you can safely remove them
 
-    description = "FarsiFlix HD Daniel v4 - distinct plugin ID, video quality selection"
+    description = "FarsiFlix HD Daniel v5 - sequential quality parsing with diagnostic source labels"
     authors = listOf("NoMeatNo")
 
     /**
