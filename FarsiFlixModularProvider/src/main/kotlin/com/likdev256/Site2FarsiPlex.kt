@@ -123,153 +123,106 @@ class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
         }
     }
     
+    // 0: keep every available resolution selectable. 1080: offer only 1080p or higher.
+    private val minimumQuality = 0
+
+    private data class FarsiPlexVideo(
+        val url: String,
+        val resolution: Int,
+        val referer: String
+    )
+
+    private fun detectResolution(source: String): Int {
+        return Regex("""(?<!\d)(2160|1440|1080|720|480|360)p?(?!\d)""", RegexOption.IGNORE_CASE)
+            .find(source.substringBefore("?"))
+            ?.groupValues?.get(1)?.toIntOrNull() ?: 0
+    }
+
+    private fun decodeSourceUrl(url: String): String =
+        url.replace("\\/", "/").replace("&amp;", "&")
+
+    // FarsiPlex's JWPlayer script exposes independently signed "file" and "file2" URLs.
+    // Use the primary URL, with file2 as a fallback, without fabricating resolutions.
+    private fun extractSignedVideo(html: String, playerUrl: String): FarsiPlexVideo? {
+        val pattern = Regex("""["']file2?["']\s*:\s*["']([^"']+)["']""")
+        val matches = pattern.findAll(html)
+            .map { decodeSourceUrl(it.groupValues[1]) }
+            .filter { it.startsWith("https://") || it.startsWith("http://") }
+            .filter { it.substringBefore("?").let { path -> path.endsWith(".mp4", true) || path.endsWith(".m3u8", true) } }
+            .toList()
+        val videoUrl = matches.firstOrNull() ?: return null
+        return FarsiPlexVideo(videoUrl, detectResolution(videoUrl), siteUrl)
+    }
+
     override suspend fun loadLinks(
         data: String,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        return try {
-            val document = app.get(data).document
-            var foundLinks = 0
-            
-            // Get post ID from the watch form
-            val watchForm = document.selectFirst("form[id^=watch-]")
-            val postId = watchForm?.selectFirst("input[name=id]")?.attr("value") ?: ""
-            
-            if (postId.isNotEmpty()) {
-                // Try dooplayer API to get embed URLs for each quality
-                for (nume in 1..8) {
-                    try {
-                        val playerType = if (data.contains("/movie/")) "movie" else "tv"
-                        val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$postId/$playerType/$nume"
-                        val apiResponse = app.get(apiUrl).text
-                        
-                        val embedUrlRegex = Regex(""""embed_url"\s*:\s*"([^"]+)"""")
-                        val embedMatch = embedUrlRegex.find(apiResponse)
-                        
-                        if (embedMatch != null) {
-                            val embedUrl = embedMatch.groupValues[1].replace("\\/", "/")
-                            
-                            // Fetch the jwplayer page to get the REAL video URL with md5 token
-                            if (embedUrl.contains("jwplayer")) {
-                                try {
-                                    val jwPlayerHtml = app.get(embedUrl).text
-                                    
-                                    // Extract the jw.file value which contains the real playable URL
-                                    val jwFileRegex = Regex(""""file"\s*:\s*"([^"]+)"""")
-                                    val jwFileMatch = jwFileRegex.find(jwPlayerHtml)
-                                    
-                                    if (jwFileMatch != null) {
-                                        val realVideoUrl = jwFileMatch.groupValues[1].replace("\\/", "/")
-                                        
-                                        if (realVideoUrl.isNotBlank() && (realVideoUrl.contains(".mp4") || realVideoUrl.contains(".m3u8"))) {
-                                            val quality = when {
-                                                realVideoUrl.contains("1080") -> Qualities.P1080.value
-                                                realVideoUrl.contains("720") -> Qualities.P720.value
-                                                realVideoUrl.contains("480") -> Qualities.P480.value
-                                                realVideoUrl.contains("360") -> Qualities.P360.value
-                                                else -> Qualities.Unknown.value
-                                            }
-                                            
-                                            val qualityLabel = when (quality) {
-                                                Qualities.P1080.value -> "1080p"
-                                                Qualities.P720.value -> "720p"
-                                                Qualities.P480.value -> "480p"
-                                                Qualities.P360.value -> "360p"
-                                                else -> ""
-                                            }
-                                            
-                                            callback.invoke(
-                                                newExtractorLink(
-                                                    source = siteName,
-                                                    name = "$siteName $qualityLabel",
-                                                    url = realVideoUrl
-                                                ).apply {
-                                                    this.quality = quality
-                                                    this.referer = siteUrl
-                                                }
-                                            )
-                                            foundLinks++
-                                        }
-                                    }
-                                } catch (_: Exception) {}
-                            }
-                        }
-                    } catch (_: Exception) {}
-                }
-            }
-            
-            // Fallback: try player options from page
-            if (true) { // Always check player options, even when an earlier source was found.
-                val playerDocument = if (watchForm != null) {
-                    val formAction = watchForm.attr("action")
-                    val formId = watchForm.selectFirst("input[name=id]")?.attr("value") ?: ""
-                    if (formAction.isNotEmpty() && formId.isNotEmpty()) {
-                        app.post(formAction, data = mapOf("id" to formId), referer = data).document
-                    } else document
-                } else document
-                
-                val dataPostId = playerDocument.selectFirst("li.dooplay_player_option[data-post]")?.attr("data-post")
-                    ?: playerDocument.selectFirst("[data-post]")?.attr("data-post")
-                
-                if (dataPostId != null) {
-                    val playerOptions = playerDocument.select("li.dooplay_player_option")
-                    playerOptions.forEach { option ->
-                        val nume = option.attr("data-nume")
-                        val dataType = option.attr("data-type")
-                        
-                        try {
-                            val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$dataPostId/$dataType/$nume"
-                            val apiResponse = app.get(apiUrl).text
-                            
-                            val embedUrlRegex = Regex(""""embed_url"\s*:\s*"([^"]+)"""")
-                            val embedMatch = embedUrlRegex.find(apiResponse)
-                            
-                            if (embedMatch != null) {
-                                val embedUrl = embedMatch.groupValues[1].replace("\\/", "/")
-                                
-                                if (embedUrl.contains("jwplayer")) {
-                                    val jwPlayerHtml = app.get(embedUrl).text
-                                    val jwFileRegex = Regex(""""file"\s*:\s*"([^"]+)"""")
-                                    val jwFileMatch = jwFileRegex.find(jwPlayerHtml)
-                                    
-                                    if (jwFileMatch != null) {
-                                        val realVideoUrl = jwFileMatch.groupValues[1].replace("\\/", "/")
-                                        
-                                        if (realVideoUrl.isNotBlank() && (realVideoUrl.contains(".mp4") || realVideoUrl.contains(".m3u8"))) {
-                                            val quality = when {
-                                                realVideoUrl.contains("1080") -> Qualities.P1080.value
-                                                realVideoUrl.contains("720") -> Qualities.P720.value
-                                                realVideoUrl.contains("480") -> Qualities.P480.value
-                                                else -> Qualities.Unknown.value
-                                            }
-                                            
-                                            callback.invoke(
-                                                newExtractorLink(
-                                                    source = siteName,
-                                                    name = siteName,
-                                                    url = realVideoUrl
-                                                ).apply {
-                                                    this.quality = quality
-                                                    this.referer = siteUrl
-                                                }
-                                            )
-                                            foundLinks++
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (_: Exception) {}
-                    }
-                }
-            }
-            
-            foundLinks > 0
-        } catch (_: Exception) {
-            false
+        val document = try { app.get(data).document } catch (_: Exception) { return false }
+
+        // Real episode HTML: <form id="watch-17338" ...></form>
+        // There is no hidden input[name=id], which the old extractor incorrectly expected.
+        val form = document.selectFirst("form[id^=watch-]")
+        val postId = form?.attr("id")?.substringAfter("watch-")
+            ?.takeIf { it.isNotBlank() && it.all(Char::isDigit) }
+            ?: form?.selectFirst("input[name=id]")?.attr("value")
+            ?: document.selectFirst(".dooplay_player_option[data-post]")?.attr("data-post")
+            ?: Regex("""\bpostid-(\d+)\b""").find(document.body().className())
+                ?.groupValues?.get(1)
+            ?: return false
+
+        val preferredType = if (data.contains("/movie/")) "movie" else "tv"
+
+        // Some items have no player-option nodes until the user clicks Play.
+        // The DooPlayer API still exposes each numbered source directly.
+        val options = linkedSetOf<Pair<String, Int>>()
+        document.select(".dooplay_player_option[data-nume]").forEach { element ->
+            val index = element.attr("data-nume").toIntOrNull()
+            val type = element.attr("data-type").ifBlank { preferredType }
+            if (index != null && index in 1..20) options.add(type to index)
         }
+        for (index in 1..8) options.add(preferredType to index)
+
+        val videos = kotlinx.coroutines.coroutineScope {
+            options.map { (type, index) ->
+                kotlinx.coroutines.async {
+                    try {
+                        val apiUrl = "$siteUrl/wp-json/dooplayer/v2/$postId/$type/$index"
+                        val json = app.get(apiUrl, referer = data).text
+                        val embedUrl = org.json.JSONObject(json).optString("embed_url").trim()
+                        if (!embedUrl.startsWith("https://") && !embedUrl.startsWith("http://")) {
+                            null
+                        } else {
+                            val playerHtml = app.get(embedUrl, referer = data).text
+                            extractSignedVideo(playerHtml, embedUrl)
+                        }
+                    } catch (_: Exception) { null }
+                }
+            }.mapNotNull { it.await() }
+        }
+
+        // Deduplicate links, favour 1080p. The player can display every found quality.
+        val unique = videos.distinctBy { it.url }.filter {
+            minimumQuality == 0 || it.resolution >= minimumQuality
+        }.sortedByDescending { it.resolution }
+
+        for (video in unique) {
+            val label = if (video.resolution > 0) video.resolution.toString() + "p" else "unknown quality"
+            callback.invoke(
+                newExtractorLink(
+                    source = siteName,
+                    name = siteName + " " + label,
+                    url = video.url
+                ).apply {
+                    quality = if (video.resolution > 0) video.resolution else Qualities.Unknown.value
+                    referer = video.referer
+                }
+            )
+        }
+        return unique.isNotEmpty()
     }
-    
+
     private fun fixUrl(url: String): String {
         return if (url.startsWith("http")) url else "$siteUrl$url"
     }
