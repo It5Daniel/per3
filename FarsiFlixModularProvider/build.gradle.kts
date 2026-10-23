@@ -1,11 +1,11 @@
-version = 2
+version = 3
 
 
 cloudstream {
     language = "fa"
     // All of these properties are optional, you can safely remove them
 
-    description = "FarsiFlix Modular - extended FarsiPlex player and quality discovery"
+    description = "FarsiFlix Modular v3 - FarsiPlex 480p/720p/1080p quality picker"
     authors = listOf("NoMeatNo")
 
     /**
