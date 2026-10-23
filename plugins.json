@@ -1,10 +1,10 @@
 [
   {
     "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/modular_icon.png",
-    "fileHash": "sha256-f5b7b7d4a9d174ee453f3ee6cd2a468f529a1509b67132fd262218690391cda6",
+    "fileHash": "sha256-1a1f93a67a1864a14ae6cee387e4858421b84e996ca4f03693608dc6d355004a",
     "apiVersion": 1,
     "repositoryUrl": "https://github.com/It5Daniel/per3",
-    "fileSize": 71548,
+    "fileSize": 71561,
     "status": 1,
     "language": "fa",
     "authors": [
@@ -15,10 +15,10 @@
       "Movie",
       "Live"
     ],
-    "version": 3,
-    "internalName": "FarsiFlixModularProvider",
-    "description": "FarsiFlix Modular v3 - FarsiPlex 480p/720p/1080p quality picker",
-    "url": "https://raw.githubusercontent.com/It5Daniel/per3/builds/FarsiFlixModularProvider.cs3",
-    "name": "FarsiFlixModularProvider"
+    "version": 4,
+    "internalName": "FarsiFlixHDProvider",
+    "description": "FarsiFlix HD Daniel v4 - distinct plugin ID, video quality selection",
+    "url": "https://raw.githubusercontent.com/It5Daniel/per3/builds/FarsiFlixHDProvider.cs3",
+    "name": "FarsiFlixHDProvider"
   }
 ]
