@@ -1,0 +1,24 @@
+[
+  {
+    "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/modular_icon.png",
+    "fileHash": "sha256-c6ebe57498dfe483494f899d1c933043f445db594b01cb7ddbe6705d50c2be60",
+    "apiVersion": 1,
+    "repositoryUrl": "https://github.com/It5Daniel/per3",
+    "fileSize": 69748,
+    "status": 1,
+    "language": "fa",
+    "authors": [
+      "NoMeatNo"
+    ],
+    "tvTypes": [
+      "TvSeries",
+      "Movie",
+      "Live"
+    ],
+    "version": 2,
+    "internalName": "FarsiFlixModularProvider",
+    "description": "FarsiFlix Modular - extended FarsiPlex player and quality discovery",
+    "url": "https://raw.githubusercontent.com/It5Daniel/per3/builds/FarsiFlixModularProvider.cs3",
+    "name": "FarsiFlixModularProvider"
+  }
+]\n
