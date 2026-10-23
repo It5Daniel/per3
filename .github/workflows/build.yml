@@ -42,8 +42,14 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Configure Android SDK
+        shell: bash
+        run: |
+          set -e
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          SDK_MANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          "$SDK_MANAGER" --version
+          "$SDK_MANAGER" "platforms;android-33" "build-tools;33.0.2"
         
       - name: Build Plugins
         run: |
