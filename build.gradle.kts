@@ -69,15 +69,12 @@ subprojects {
         }
     }
 
-    // Newer CloudStream Gradle plugin versions may not create the legacy apk config.
-    configurations.maybeCreate("apk")
-
     dependencies {
         val implementation by configurations
+        val cloudstream by configurations
 
-        // Stubs for all Cloudstream classes
-        add("apk", "com.lagradost:cloudstream3:pre-release")
-        add("compileOnly", "com.lagradost:cloudstream3:pre-release")
+        // The CloudStream Gradle plugin wires this configuration into the build.
+        cloudstream("com.lagradost:cloudstream3:pre-release")
 
         // these dependencies can include any of those which are added by the app,
         // but you dont need to include any of them if you dont need them
