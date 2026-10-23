@@ -15,7 +15,7 @@ import kotlinx.coroutines.coroutineScope
  */
 class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
     override val siteUrl = "https://farsiplex.com"
-    override val siteName = "FarsiPlex"
+    override val siteName = "FarsiPlex HD Daniel"
     
     override val mainPages = listOf(
         "$siteUrl/movie/" to "Movies - $siteName",
