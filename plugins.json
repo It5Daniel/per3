@@ -1,10 +1,10 @@
 [
   {
     "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/modular_icon.png",
-    "fileHash": "sha256-1a1f93a67a1864a14ae6cee387e4858421b84e996ca4f03693608dc6d355004a",
+    "fileHash": "sha256-bb3f109bb5f403cee6fd0b781d62ffcc8d175d2d92840f62616aae188e052879",
     "apiVersion": 1,
     "repositoryUrl": "https://github.com/It5Daniel/per3",
-    "fileSize": 71561,
+    "fileSize": 72921,
     "status": 1,
     "language": "fa",
     "authors": [
@@ -15,9 +15,9 @@
       "Movie",
       "Live"
     ],
-    "version": 4,
+    "version": 5,
     "internalName": "FarsiFlixHDProvider",
-    "description": "FarsiFlix HD Daniel v4 - distinct plugin ID, video quality selection",
+    "description": "FarsiFlix HD Daniel v5 - sequential quality parsing with diagnostic source labels",
     "url": "https://raw.githubusercontent.com/It5Daniel/per3/builds/FarsiFlixHDProvider.cs3",
     "name": "FarsiFlixHDProvider"
   }
